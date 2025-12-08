@@ -23,18 +23,22 @@ This repository contains the **Offline Edition** of the platform, allowing resea
 
 - **Intelligent Substrate Removal**:
   - **Standard Mode**: Detects the "jump" where the material meets the substrate using a bottom-up scan.
-  - **EDM Cut Mode**: Uses a center-out pixel scanning algorithm to trace cut surfaces.
+  - **EDM Cut Mode**: Uses a center-out pixel scanning algorithm to trace a flat bottom surface
+  - **Manual Mode**: Manually select points along the substrate to define a substrate line
 
 ### 2. Advanced Analysis Tools
 
 - **Porosity Quantification**:
-  - Automated segmentation using CLAHE (Contrast Limited Adaptive Histogram Equalization) and Otsu's Binarization.
-  - Filters for pore size and sphericity to remove noise.
+  - Binarized using Otsu's binarization, can adjust contrast using CLAHE
+  - Can filter pores by size, sphericity
   - Height-interval slicing (e.g., measure porosity every 1mm).
 
-- **Thickness Profiling**: Measures the build height relative to the substrate across the entire width of the sample.
+- **Thickness Profiling**:
+  - Measures the thickness of the build against hight. For example, you can measure the thickness of the sample every 0.2 mm up to 5 mm
+  - Can measure excess deposited material: If you were to machine the sample down to a uniform thickness, what percent of the material deposited would be wasted?
 
-- **Notch/Waisting Detection**: Uses derivative analysis (1st, 2nd, and 3rd derivatives of the edge profile) to mathematically identify geometric inconsistencies and notches.
+- **Notch/Waisting Detection** (Not complete):
+  - Tries to detect notches in the side of the deposit
 
 ### 3. Extensible Plugin Engine 🔌
 
@@ -42,6 +46,7 @@ The **"Custom Script"** feature allows researchers to extend the platform withou
 
 - Users can upload raw Python scripts (`.py`).
 - The app automatically generates a GUI for the script (sliders, dropdowns, inputs) based on the code structure.
+- Documentation included on the page
 - Scripts receive pre-processed, calibrated image data instantly.
 
 ---
@@ -134,7 +139,7 @@ class MyCustomTool(CustomScript):
 
 ## 🔮 Future Roadmap
 
-- **Cloud Integration**: (Currently available in the Enterprise version) Syncing metadata and images to Google Firebase / Firestore.
+- **Cloud Integration**: Syncing metadata and images to Google Firebase / Firestore.
 - **Foundation Models**: Integrating Segment Anything Model (SAM) or YOLO for zero-shot defect detection without manual thresholding.
 - **API**: Releasing a headless Python wrapper for batch-processing images on clusters.
 
