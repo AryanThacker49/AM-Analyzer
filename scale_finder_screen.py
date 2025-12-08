@@ -13,11 +13,31 @@ from PySide6.QtGui import QPixmap, Qt, QImage, QPainter, QPen, QColor, QBrush
 from PySide6 import QtCore, QtGui
 
 # =====================================================================
-# CONFIGURATION
+# CONFIGURATION: ROBUST TESSERACT PATH
 # =====================================================================
-TESSERACT_PATH = r'C:/Users/aryan/OneDrive/Desktop/Al - Steel Research/Images/Tesseract-OCR/tesseract.exe'
-if os.path.exists(TESSERACT_PATH):
-    pytesseract.pytesseract.tesseract_cmd = TESSERACT_PATH
+# 1. Your Local Dev Path (Priority)
+dev_path = r'C:/Users/aryan/OneDrive/Desktop/Al - Steel Research/Images/Tesseract-OCR/tesseract.exe'
+# 2. Standard Windows Install Path (Most common for others)
+std_path = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+
+TESSERACT_FOUND = False
+
+if os.path.exists(dev_path):
+    # We are on Aryan's computer
+    pytesseract.pytesseract.tesseract_cmd = dev_path
+    TESSERACT_FOUND = True
+elif os.path.exists(std_path):
+    # We are on a standard installation (e.g. Professor's computer)
+    pytesseract.pytesseract.tesseract_cmd = std_path
+    TESSERACT_FOUND = True
+else:
+    # Fallback: Try to find tesseract in system PATH
+    import shutil
+    if shutil.which('tesseract'):
+        TESSERACT_FOUND = True
+    else:
+        # Tesseract not found anywhere - will show error to user
+        TESSERACT_FOUND = False
 
 # =====================================================================
 # HELPER CLASS: AspectRatioLabel
@@ -193,6 +213,23 @@ class ScaleFinderScreen(QWidget):
         self._build_ui()
 
     def _build_ui(self):
+        # Check if Tesseract is installed and show warning if not
+        if not TESSERACT_FOUND:
+            msg = QMessageBox(self)
+            msg.setIcon(QMessageBox.Warning)
+            msg.setWindowTitle("Tesseract OCR Not Found")
+            msg.setText("Tesseract OCR is not installed or not in your system PATH.")
+            msg.setInformativeText(
+                "The Scale Finder feature requires Tesseract OCR to automatically read scale bars.\n\n"
+                "Please install Tesseract from:\n"
+                "https://github.com/UB-Mannheim/tesseract/wiki\n\n"
+                "Make sure to add it to your PATH during installation, or install it to:\n"
+                "C:\\Program Files\\Tesseract-OCR\\\n\n"
+                "You can continue using the app, but automatic scale detection will not work."
+            )
+            msg.setStandardButtons(QMessageBox.Ok)
+            msg.exec()
+        
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(20, 20, 20, 20)
         main_layout.setSpacing(15)
@@ -497,8 +534,9 @@ class ScaleFinderScreen(QWidget):
         roi_padded = cv2.copyMakeBorder(roi_upscaled, 20, 20, 20, 20, cv2.BORDER_CONSTANT, value=(255, 255, 255))
 
         try:
-            tess_config = r'--oem 3 --psm 7'
-            text = pytesseract.image_to_string(roi_padded, config=tess_config) 
+            # --- FIX: Caught Tesseract Not Found Error ---
+            tess_config = r'--oem 3 --psm 7 -c tessedit_char_whitelist=0123456789.,mMuµ'
+            text = pytesseract.image_to_string(ocr_input, config=tess_config) 
             
             match = re.search(r'(\d+[\.,]?\d*)\s*([a-zA-Zµμ]+)', text.lower())
             if match:
@@ -509,7 +547,13 @@ class ScaleFinderScreen(QWidget):
                      scale_unit = 'mm'
                  else:
                      scale_unit = 'µm'
-        except: pass
+        except pytesseract.TesseractNotFoundError:
+            # --- FIX: Specific Red Error for missing Tesseract ---
+            self.final_scale_label.setText("Error: Tesseract not found/installed")
+            self.final_scale_label.setStyleSheet("font-size: 14px; font-weight: bold; padding: 5px; color: #E57373;")
+            return
+        except Exception as e:
+            print(f"OCR Error: {e}")
 
         if self.current_detected_line_length_px and scale_val and scale_unit:
             unit_factor = {'mm': 1000, 'cm': 10000, 'µm': 1}
@@ -600,34 +644,3 @@ class ScaleFinderScreen(QWidget):
             return
         self.prev_img_btn.setEnabled(self.current_index > 0)
         self.next_img_btn.setEnabled(self.current_index < len(self.image_data) - 1)
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    app.setStyle("Fusion")
-    
-    dark_palette = QtGui.QPalette()
-    dark_palette.setColor(QtGui.QPalette.Window, QtGui.QColor(23, 23, 23))
-    dark_palette.setColor(QtGui.QPalette.WindowText, QtCore.Qt.white)
-    dark_palette.setColor(QtGui.QPalette.Base, QtGui.QColor(30, 30, 30))
-    dark_palette.setColor(QtGui.QPalette.Text, QtCore.Qt.white)
-    dark_palette.setColor(QtGui.QPalette.Button, QtGui.QColor(45, 45, 45))
-    dark_palette.setColor(QtGui.QPalette.ButtonText, QtCore.Qt.white)
-    app.setPalette(dark_palette)
-    
-    win = ScaleFinderScreen()
-    win.resize(1200, 800)
-    
-    test_data = [
-        {
-             "path": "C:/Users/aryan/Downloads/TR.tif", 
-             "microns_per_pixel": None,
-             "roi_x_pct": 0.0, "roi_y_pct": 70.0, "roi_w_pct": 30.0, "roi_h_pct": 30.0,
-             "manual_val": "", "manual_unit": "µm"
-        }
-    ]
-    valid_test_data = [d for d in test_data if os.path.exists(d["path"])]
-    if valid_test_data:
-        win.load_image_data(valid_test_data)
-
-    win.show()
-    sys.exit(app.exec())
