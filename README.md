@@ -55,11 +55,41 @@ The **"Custom Script"** feature allows researchers to extend the platform withou
 
 ### Prerequisites
 
-- **Python 3.10+**
-- **Tesseract OCR** installed on your system:
-  - **Windows**: [Download Installer](https://github.com/UB-Mannheim/tesseract/wiki) (Add to PATH)
-  - **Mac**: `brew install tesseract`
-  - **Linux**: `sudo apt-get install tesseract-ocr`
+**Python 3.10+**
+
+### Installing Tesseract OCR (Crucial Step) ⚠️
+
+This application uses Tesseract to read scale bars from microscopy images. **You must install the OCR engine separately from the Python libraries.** Installing `pytesseract` via pip is NOT enough - it's just a Python wrapper.
+
+**For Windows Users:**
+
+1. **Download the Installer**: Go to [UB Mannheim's GitHub](https://github.com/UB-Mannheim/tesseract/wiki) and download the latest `tesseract-ocr-w64-setup.exe`.
+
+2. **Run the Installer**.
+
+3. **⚠️ IMPORTANT**: During installation, make sure to:
+   - Either check the box that says **"Add Tesseract to PATH"**
+   - OR ensure the install location is the default: `C:\Program Files\Tesseract-OCR`
+   
+4. If you installed it to a custom location and did not add it to your PATH, the app may not find it automatically and will show an error.
+
+**For Mac Users (Homebrew):**
+
+```bash
+brew install tesseract
+```
+
+**For Linux Users:**
+
+```bash
+sudo apt-get install tesseract-ocr
+```
+
+**Verification**: After installation, open a new terminal/command prompt and type:
+```bash
+tesseract --version
+```
+If you see version information, Tesseract is correctly installed!
 
 ### Setup
 
