@@ -177,3 +177,4 @@ class MyCustomTool(CustomScript):
 
 
 **Built by Aryan Thacker for the advancement of Additive Manufacturing research.**
+I would like to thank Professor Shreyes Melkote and Akshar Kota for the opportunity to work and learn on their project
